@@ -1,0 +1,66 @@
+## nginx configuration
+## Ref: https://github.com/kubernetes/ingress-nginx/blob/master/controllers/nginx/configuration.md
+## Aliyun: https://help.aliyun.com/zh/ack/ack-managed-and-ack-dedicated/user-guide/configure-an-ingress-controller-to-use-an-internal-facing-slb-instance
+##
+controller:
+  hostNetwork: false
+  kind: DaemonSet
+  image:
+    ## Keep false as default for now!
+    chroot: false
+    registry: hub.example.com
+    image: library/nginx-ingress-controller
+    ## for backwards compatibility consider setting the full image url via the repository value below
+    ## use *either* current default registry/image or repository format or installing chart by providing the values.yaml will fail
+    ## repository:
+    tag: "v1.2.0"
+    digest: sha256:314435f9465a7b2973e3aa4f2edad7465cc7bcdc8304be5d146d70e4da136e51
+    # digestChroot: sha256:fb17f1700b77d4fcc52ca6f83ffc2821861ae887dbb87149cf5cbc52bea425e5
+    pullPolicy: IfNotPresent
+    # www-data -> uid 101
+    runAsUser: 101
+    allowPrivilegeEscalation: true
+  # resources:
+  # #  limits:
+  # #    cpu: 100m
+  # #    memory: 90Mi
+  #   requests:
+  #     cpu: 1024m
+  #     memory: 1024Mi
+  config:
+    server-name-hash-bucket-size: 128
+    client-header-buffer-size: 32k
+    large-client-header-buffers: 4 32k
+    client-body-buffer-size: 20m
+    proxy-body-size: 50m
+    error-log-level: "notice"
+    compute-full-forwarded-for: "true"
+    forwarded-for-header: "X-Forwarded-For"
+    use-forwarded-headers: "true"
+
+  admissionWebhooks:
+    patch:
+      enabled: true
+      image:
+        registry: hub.example.com
+        image: library/kube-webhook-certgen
+        ## for backwards compatibility consider setting the full image url via the repository value below
+        ## use *either* current default registry/image or repository format or installing chart by providing the values.yaml will fail
+        ## repository:
+        tag: v1.1.1
+        digest: sha256:78351fc9d9b5f835e0809921c029208faeb7fbb6dc2d3b0d1db0a6584195cfed
+        pullPolicy: IfNotPresent
+      # -- Provide a priority class name to the webhook patching job
+  service:
+    enabled: true
+    internal:
+      enabled: false
+    externalTrafficPolicy: Local
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false
+
+  ingressClassResource:
+    # -- Is this the default ingressClass for the cluster
+    default: false

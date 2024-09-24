@@ -1,0 +1,141 @@
+defaultRules:
+  create: true
+  rules:
+    kubeProxy: false
+    etcd: false
+    thanos: true
+
+  additionalRuleLabels:
+    provider: alicloud
+    region: cn-beijing
+    customer_id: k8s-ali-beijing-sandbox-01
+    environment: prod
+
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname']
+      group_wait: 10s
+      group_interval: 20m
+      repeat_interval: 4h
+      receiver: 'alarm-receiver'
+      routes:
+      - receiver: alarm-receiver
+        match_re:
+          alarm_level: (P0|p0)
+        repeat_interval: 1h
+      - receiver: alarm-receiver
+        match_re:
+          alarm_level: (P1|p1)
+        repeat_interval: 2h
+      - receiver: alarm-receiver
+        match_re:
+          alarm_level: (P5|p5)
+        repeat_interval: 6h
+    receivers:
+    - name: 'alarm-receiver'
+      webhook_configs:
+      - url: 'https://webhook.example.com/api/alert/receive'
+        send_resolved: true
+  alertmanagerSpec:
+    image:
+      registry: hub.example.com
+      repository: library/alertmanager
+      tag: v0.26.0
+    volumeClaimTemplate:
+      spec:
+        storageClassName: alicloud-disk-essd
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi
+    selector: {}
+    replicas: 1
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - alert-ali-beijing-sandbox-01.example.com
+  servicePerReplica:
+    enabled: true
+
+kubeProxy:
+  enabled: false
+kubeApiServer:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+grafana:
+  enabled: false
+
+prometheusOperator:
+  admissionWebhooks:
+    patch:
+      enabled: true
+      image:
+        registry: hub.example.com
+        repository: library/kube-webhook-certgen
+        tag: v20221220-controller-v1.5.1-58-g787ea74b6
+  image:
+    registry: hub.example.com
+    repository: library/prometheus-operator
+    tag: v0.70.0
+    pullPolicy: IfNotPresent
+  prometheusConfigReloader:
+    image:
+      registry: hub.example.com
+      repository: library/prometheus-config-reloader
+      tag: v0.70.0
+  thanosImage:
+    registry: hub.example.com
+    repository: library/thanos
+    tag: v0.32.5
+
+prometheus:
+  prometheusSpec:
+    replicas: 2
+    image:
+      registry: hub.example.com
+      repository: library/prometheus
+      tag: v2.48.1
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: alicloud-disk-essd
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 100Gi
+    remoteWrite:
+      - url: "https://metricbeat.example.com/api/v1/receive"
+    retention: 30d
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    pathType: Prefix
+    hosts:
+      - prom-ali-beijing-sandbox-01.example.com
+
+kube-state-metrics:
+  image:
+    registry: hub.example.com
+    repository: library/kube-state-metrics
+    tag: v2.10.0
+    pullPolicy: IfNotPresent
+
+traefikExporter:
+  enabled: false
+
+nodeExporter:
+  enabled: true
+
+thanosRuler:
+  enabled: false

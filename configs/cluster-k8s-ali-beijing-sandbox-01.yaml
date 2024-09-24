@@ -1,0 +1,29 @@
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  annotations:
+    sealedsecrets.bitnami.com/namespace-wide: "true"
+  name: cluster-k8s-ali-beijing-sandbox-01
+  namespace: argocd
+spec:
+  template:
+    metadata:
+      annotations:
+        sealedsecrets.bitnami.com/namespace-wide: "true"
+        addons_repo_basepath: ""
+        addons_repo_path: appsets
+        addons_repo_revision: HEAD
+        addons_repo_url: https://git.example.com/ops/argocd.git
+        cluster_name: k8s-ali-beijing-sandbox-01
+        managed-by: argocd.argoproj.io
+      labels:
+        argocd.argoproj.io/secret-type: cluster
+        cluster_name: k8s-ali-beijing-sandbox-01
+        enable_ingress_nginx: "true"
+        enable_kube_prometheus_stack: "true"
+      name: cluster-k8s-ali-beijing-sandbox-01
+      namespace: argocd
+  encryptedData:
+    name: AgAxvLCXp......
+    server: AgCFVvXppE9w......
+    config: AgBfQPLJCPqQe......

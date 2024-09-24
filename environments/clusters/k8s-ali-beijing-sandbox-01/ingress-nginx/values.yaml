@@ -1,0 +1,14 @@
+controller:
+  reportNodeInternalIp: 10.1.10.11
+  service:
+    labels: 
+      region: beijing
+      zone: k
+      lbip: "10.1.10.11"
+    annotations:
+      # 指明SLB实例地址类型为私网类型
+      service.beta.kubernetes.io/alibaba-cloud-loadbalancer-address-type: intranet
+      # 修改为您的私网SLB实例ID
+      service.beta.kubernetes.io/alibaba-cloud-loadbalancer-id: lb-2zetdos2kdh67kxxxxxxx
+      # 是否自动创建SLB端口监听（会覆写已有端口监听）
+      service.beta.kubernetes.io/alibaba-cloud-loadbalancer-force-override-listeners: 'true'

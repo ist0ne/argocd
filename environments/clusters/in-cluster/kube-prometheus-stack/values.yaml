@@ -1,0 +1,188 @@
+defaultRules:
+  create: true
+  rules:
+    kubeProxy: false
+    etcd: false
+    time: false
+    traefik: false
+    jenkins: false
+    ads: false
+    customer: false
+    mingdaoyun: false
+
+  additionalRuleLabels:
+    provider: alicloud
+    region: cn-beijing
+    customer_id: k8s-ali-beijing-global-01
+    environment: prod
+
+alertmanager:
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 1h
+      receiver: 'alarm-receiver'
+      routes:
+      - match:
+          alertname: Watchdog
+        receiver: "alarm-receiver"
+    receivers:
+    - name: 'alarm-receiver'
+      webhook_configs:
+      - url: 'https://webhook.example.com/api/alert/receive'
+        send_resolved: true
+    templates:
+    - '/etc/alertmanager/config/*.tmpl'
+  alertmanagerSpec:
+    image:
+      registry: hub.example.com
+      repository: library/alertmanager
+      tag: v0.26.0
+    volumeClaimTemplate:
+      spec:
+        storageClassName: cbs-normal
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+    selector: {}
+    replicas: 1
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - alert-ali-beijing-global-01.example.com
+  servicePerReplica:
+    enabled: true
+
+kubeProxy:
+  enabled: false
+kubeApiServer:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kube-state-metrics:
+  image:
+    registry: hub.example.com
+    repository: library/kube-state-metrics
+    tag: v2.10.1
+
+grafana:
+  enabled: true
+  image:
+    registry: hub.example.com
+    repository: library/grafana
+    tag: 8.5.9
+  defaultDashboardsEnabled: true
+  adminPassword: grafana123
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - mon.example.com
+    tls:
+      - secretName: tls-example-ingress
+        hosts:
+          - mon.example.com
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      annotations: {}
+      multicluster:
+        global:
+          enabled: false
+        etcd:
+          enabled: false
+      provider:
+        allowUiUpdates: false
+    datasources:
+      enabled: true
+      defaultDatasourceEnabled: false
+  additionalDataSources:
+    - name: k8s-ali-beijing-global-01
+      type: prometheus
+      url: http://kube-prometheus-stack-prometheus:9090/
+      access: proxy
+      isDefault: true
+      jsonData:
+        timeInterval: 30s
+    - name: k8s-ali-beijing-sandbox-01
+      type: prometheus
+      url: http://prom-ali-beijing-sandbox-01.example.com
+      access: proxy
+      isDefault: false
+      jsonData:
+        timeInterval: 30s
+  plugins:
+  - grafana-piechart-panel
+
+prometheusOperator:
+  admissionWebhooks:
+    patch:
+      enabled: true
+      image:
+        registry: hub.example.com
+        repository: library/kube-webhook-certgen
+        tag: v20221220-controller-v1.5.1-58-g787ea74b6
+  image:
+    registry: hub.example.com
+    repository: library/prometheus-operator
+    tag: v0.70.0
+    pullPolicy: IfNotPresent
+  prometheusConfigReloader:
+    image:
+      registry: hub.example.com
+      repository: library/prometheus-config-reloader
+      tag: v0.70.0
+  thanosImage:
+    registry: hub.example.com
+    repository: library/thanos
+    tag: v0.32.5
+
+prometheus:
+  prometheusSpec:
+    replicas: 2
+    image:
+      registry: hub.example.com
+      repository: library/prometheus
+      tag: v2.48.1
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: hssd-normal
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+    remoteWrite: []
+    retention: 15d
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - prometheus.global.example.com
+
+kube-state-metrics:
+  image:
+    registry: hub.example.com
+    repository: library/kube-state-metrics
+    tag: v2.10.0
+    pullPolicy: IfNotPresent
+
+traefikExporter:
+  enabled: false
+
+nodeExporter:
+  enabled: true
+

@@ -1,0 +1,4 @@
+image:
+  registry: hub.example.com
+  repository: library/sealed-secrets-controller
+  tag: 0.27.1

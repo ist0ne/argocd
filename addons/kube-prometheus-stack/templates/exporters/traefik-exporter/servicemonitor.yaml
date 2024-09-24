@@ -1,0 +1,31 @@
+{{- if .Values.traefikExporter.enabled }}
+apiVersion: {{ printf "%s/v1" (.Values.prometheusOperator.crdApiGroup | default "monitoring.coreos.com") }}
+kind: ServiceMonitor
+metadata:
+  name: {{ template "kube-prometheus-stack.fullname" . }}-traefik-exporter
+  labels:
+    app: {{ template "kube-prometheus-stack.name" . }}-traefik-exporter
+{{ include "kube-prometheus-stack.labels" . | indent 4 }}
+spec:
+  jobLabel: jobLabel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+  namespaceSelector:
+    matchNames:
+      - "kube-system"
+  endpoints:
+  - port: traefik
+    path: /metrics
+    {{- if .Values.traefikExporter.serviceMonitor.interval }}
+    interval: {{ .Values.traefikExporter.serviceMonitor.interval }}
+    {{- end }}
+{{- if .Values.traefikExporter.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+{{ toYaml .Values.traefikExporter.serviceMonitor.metricRelabelings | indent 4 }}
+{{- end }}
+{{- if .Values.traefikExporter.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml .Values.traefikExporter.serviceMonitor.relabelings | indent 4 }}
+{{- end }}
+{{- end }}
